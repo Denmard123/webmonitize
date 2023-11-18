@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
@@ -271,3 +272,4 @@ const AdminCMS = () => {
 };
 
 export default AdminCMS;
+ReactDOM.render(<AdminCMS />, document.getElementById('admin-cms'));
