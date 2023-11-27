@@ -1,22 +1,16 @@
 const express = require('express');
+const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
 const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
-const cors = require('cors');
-const nodemailer = require('nodemailer');
-const crypto = require('crypto');
-
 const app = express();
 const port = 3001;
 
 app.use(bodyParser.json());
 app.use(cors());
-
-const corsOptions = {
-  origin: 'http://localhost:3000',
-};
-
-app.use(cors(corsOptions));
 
 const db = mysql.createConnection({
   host: 'localhost',
@@ -30,156 +24,173 @@ db.connect((err) => {
     console.error('Error connecting to MySQL:', err);
   } else {
     console.log('Connected to MySQL database');
-    createTableIfNotExists();
   }
 });
 
-const createTableIfNotExists = () => {
-  db.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      username VARCHAR(255) NOT NULL,
-      password VARCHAR(255) NOT NULL,
-      resetToken VARCHAR(255),
-      resetTokenExpiration BIGINT
-    )
-  `, (err, result) => {
-    if (err) {
-      console.error('Error creating table:', err);
-    } else {
-      console.log('Table created successfully');
-    }
-  });
-};
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); // Menyimpan file di folder 'uploads'
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname)); // Nama file akan menjadi timestamp saat diupload
+  },
+});
 
-app.post('/register', async (req, res) => {
-  const { username, password } = req.body;
+const upload = multer({ storage: storage });
+app.use('/uploads', express.static('uploads'));
+
+// Endpoint untuk menambahkan data baru ke dalam tabel sales_data
+app.post('/sales', async (req, res) => {
+  const { Years_of_experience, penjualan } = req.body; // Memastikan nama field sesuai dengan yang diharapkan
+  try {
+    // Lakukan penambahan data ke database menggunakan query INSERT
+    await db.promise().query('INSERT INTO sales_data (penjualan, Years_of_experience) VALUES (?, ?)', [Years_of_experience, penjualan]);
+    res.status(201).json({ message: 'Data added successfully' });
+  } catch (error) {
+    console.error('Error adding data:', error);
+    res.status(500).json({ message: 'Failed to add data' });
+  }
+});
+
+
+// Endpoint untuk mendapatkan data dari tabel sales_data
+app.get('/sales', async (req, res) => {
+  try {
+    const [rows] = await db.promise().query('SELECT * FROM sales_data');
+    res.status(200).json(rows); // Mengembalikan data ke frontend
+  } catch (error) {
+    console.error('Error fetching sales data:', error);
+    res.status(500).json({ message: 'Failed to fetch sales data' });
+  }
+});
+
+// Endpoint untuk mengupdate data di dalam tabel sales_data berdasarkan ID
+app.put('/sales/:id', async (req, res) => {
+  const productId = req.params.id;
+  const { productName, price } = req.body;
+  try {
+    // Lakukan operasi UPDATE di database berdasarkan ID
+    const result = await db.promise().query('UPDATE sales_data SET penjualan = ?, Years_of_experience = ? WHERE id = ?', [price, productName, productId]);
+    if (result[0].affectedRows === 1) {
+      res.status(200).json({ message: 'Data updated successfully' });
+    } else {
+      throw new Error('Failed to update data');
+    }
+  } catch (error) {
+    console.error('Error updating data:', error);
+    res.status(500).json({ message: 'Failed to update data' });
+  }
+});
+
+// Endpoint untuk menghapus data dari tabel sales_data berdasarkan ID
+app.delete('/sales/:id', async (req, res) => {
+  const productId = req.params.id;
+  try {
+    // Lakukan operasi DELETE di database berdasarkan ID
+    const result = await db.promise().query('DELETE FROM sales_data WHERE id = ?', [productId]);
+    if (result[0].affectedRows === 1) {
+      res.status(200).json({ message: 'Data deleted successfully' });
+    } else {
+      throw new Error('Failed to delete data');
+    }
+  } catch (error) {
+    console.error('Error deleting data:', error);
+    res.status(500).json({ message: 'Failed to delete data' });
+  }
+});
+
+
+
+// Endpoint untuk mendapatkan data testimonial
+app.get('/testimonials', async (req, res) => {
+  try {
+    const [testimonials] = await db.promise().query('SELECT * FROM testimonials');
+    res.status(200).json(testimonials);
+  } catch (error) {
+    console.error('Error fetching testimonials:', error);
+    res.status(500).json({ message: 'Failed to fetch testimonials' });
+  }
+});
+
+// Endpoint untuk menambah testimoni baru dengan gambar
+app.post('/testimonials', upload.single('image'), async (req, res) => {
+  const { text } = req.body;
+  const imagePath = req.file.filename; // Nama file yang disimpan di server
 
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const checkUsernameQuery = 'SELECT * FROM users WHERE username = ?';
-    const existingUser = await db.promise().query(checkUsernameQuery, [username]);
-
-    if (existingUser[0].length > 0) {
-      return res.status(400).send('Username already exists');
-    }
-
-    const insertUserQuery = 'INSERT INTO users (username, password) VALUES (?, ?)';
-    await db.promise().query(insertUserQuery, [username, hashedPassword]);
-
-    console.log('User registered successfully');
-    res.status(200).end();
+    // Simpan data testimoni dan imagePath ke database
+    await db.promise().query('INSERT INTO testimonials (text, image_path) VALUES (?, ?)', [text, imagePath]);
+    res.status(201).json({ message: 'Testimonial added successfully' });
   } catch (error) {
-    console.error('Error registering user:', error);
-    res.status(500).send('Error registering user');
+    console.error('Error adding testimonial:', error);
+    res.status(500).json({ message: 'Failed to add testimonial' });
   }
 });
 
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-
-  db.query('SELECT * FROM users WHERE username = ?', [username], async (err, result) => {
-    if (err) {
-      console.error('Error fetching user:', err);
-      res.status(500).send('Error fetching user');
-    } else if (result.length > 0) {
-      const isPasswordValid = await bcrypt.compare(password, result[0].password);
-      if (isPasswordValid) {
-        console.log('Login successful');
-        res.status(200).send('Login successful');
-      } else {
-        console.log('Invalid password');
-        res.status(401).send('Invalid password');
-      }
-    } else {
-      console.log('User not found');
-      res.status(404).send('User not found');
-    }
-  });
-});
-
-app.get('/users/:username', (req, res) => {
-  const { username } = req.params;
-
-  db.query('SELECT * FROM users WHERE username = ?', [username], (err, result) => {
-    if (err) {
-      console.error('Error fetching user:', err);
-      res.status(500).send('Error fetching user');
-    } else if (result.length > 0) {
-      const user = result[0];
-      res.status(200).json(user);
-    } else {
-      console.log('User not found');
-      res.status(404).send('User not found');
-    }
-  });
-});
-
-app.post('/api/forgot-password', async (req, res) => {
-  const { email } = req.body;
-
+// Endpoint untuk menghapus testimoni berdasarkan ID
+app.delete('/testimonials/:id', async (req, res) => {
+  const testimonialId = req.params.id;
   try {
-    const user = await User.findOne({ email });
+    const [existingTestimonial] = await db.promise().query('SELECT * FROM testimonials WHERE id = ?', [testimonialId]);
 
-    if (!user) {
-      return res.status(404).json({ message: 'Email not found' });
+    if (!existingTestimonial.length) {
+      return res.status(404).json({ message: 'Testimonial not found' });
     }
 
-    const resetToken = crypto.randomBytes(20).toString('hex');
-    const resetTokenExpiration = Date.now() + 3600000; // Token berlaku selama 1 jam
-
-    user.resetToken = resetToken;
-    user.resetTokenExpiration = resetTokenExpiration;
-    await user.save();
-
-    const transporter = nodemailer.createTransport({
-      // Konfigurasi transporter email
-    });
-
-    const mailOptions = {
-      from: 'your-email@example.com',
-      to: email,
-      subject: 'Reset Password Request',
-      html: `
-        <p>You requested a password reset.</p>
-        <p>Click this <a href="http://your-app.com/reset/${resetToken}">link</a> to set a new password.</p>
-      `,
-    };
-
-    await transporter.sendMail(mailOptions);
-
-    res.status(200).json({ message: 'Password reset email sent successfully' });
+    await db.promise().query('DELETE FROM testimonials WHERE id = ?', [testimonialId]);
+    res.status(200).json({ message: 'Testimonial deleted successfully' });
   } catch (error) {
-    console.error('Error sending password reset email:', error);
-    res.status(500).json({ message: 'Error sending password reset email' });
+    console.error('Error deleting testimonial:', error);
+    res.status(500).json({ message: 'Failed to delete testimonial' });
   }
 });
 
-app.post('/api/reset-password', async (req, res) => {
-  const { resetToken, newPassword } = req.body;
-
+// Endpoint untuk mendapatkan data galeri
+app.get('/gallery', async (req, res) => {
   try {
-    const user = await User.findOne({ resetToken, resetTokenExpiration: { $gt: Date.now() } });
-
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired reset token' });
-    }
-
-    // Reset token is valid, update the password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
-    user.resetToken = null;
-    user.resetTokenExpiration = null;
-    await user.save();
-
-    res.status(200).json({ message: 'Password reset successfully' });
+    const [galleryData] = await db.promise().query('SELECT * FROM gallery_data');
+    res.status(200).json({ galleryData });
   } catch (error) {
-    console.error('Error resetting password:', error);
-    res.status(500).json({ message: 'Error resetting password' });
+    console.error('Error fetching gallery data:', error);
+    res.status(500).json({ message: 'Failed to fetch gallery data' });
   }
 });
+
+app.post('/gallery', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).send('No file uploaded');
+    }
+
+    // Simpan informasi gambar ke database
+    const imagePath = req.file.filename;
+    await db.promise().query('INSERT INTO gallery_data (image_path) VALUES (?)', [imagePath]);
+
+    res.status(200).send('File uploaded successfully');
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    res.status(500).send('Failed to upload file');
+  }
+});
+
+app.delete('/delete_gallery_image/:id', async (req, res) => {
+  const imageId = req.params.id;
+  try {
+    const [existingImage] = await db.promise().query('SELECT * FROM gallery_data WHERE id = ?', [imageId]);
+
+    if (!existingImage.length) {
+      return res.status(404).json({ message: 'Image not found' });
+    }
+
+    await db.promise().query('DELETE FROM gallery_data WHERE id = ?', [imageId]);
+    res.status(200).json({ message: 'Image deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    res.status(500).json({ message: 'Failed to delete image' });
+  }
+});
+
 
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`http://localhost:${port}`);
 });
