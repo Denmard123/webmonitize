@@ -86,14 +86,14 @@ const ProductManagement = () => {
       <div>
         <input
           type="text"
-          placeholder="Penjualan"
+          placeholder="Years of experience"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
         />
         <input
           type="text"
-          placeholder="Years of experience"
-          value={productName}
+          placeholder="Penjualan"
+          value={productName}          
           onChange={(e) => setProductName(e.target.value)}
         />
         <button onClick={handleAddProduct}>Tambahkan</button>
