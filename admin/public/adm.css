@@ -86,3 +86,129 @@ button:hover {
     font-style: italic;
     color: #444;
 }
+
+/* Reset margin dan padding untuk semua elemen */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Mengatur body */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* Mengatur section portfolio */
+.portfolio {
+    padding: 60px 0;
+}
+
+/* Mengatur judul section */
+.portfolio .section-title {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.portfolio .section-title h2 {
+    font-size: 36px;
+    font-weight: bold;
+    color: #333;
+}
+
+.portfolio .section-title p {
+    font-size: 18px;
+    color: #666;
+}
+
+/* Mengatur container galeri */
+.portfolio-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+/* Mengatur item portfolio */
+.portfolio-item {
+    position: relative;
+    margin: 15px;
+    width: calc(33.333% - 30px); /* 3 kolom dengan margin */
+    overflow: hidden;
+    transition: transform 0.3s;
+}
+
+.portfolio-item:hover {
+    transform: scale(1.05);
+}
+
+/* Mengatur gambar di dalam item */
+.portfolio-wrap {
+    position: relative;
+}
+
+.portfolio-wrap img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Mengatur info di dalam item */
+.portfolio-info {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.portfolio-item:hover .portfolio-info {
+    opacity: 1;
+}
+
+.portfolio-info h4 {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.portfolio-info p {
+    font-size: 16px;
+    margin-bottom: 15px;
+}
+
+/* Mengatur link di dalam item */
+.portfolio-links {
+    display: flex;
+    gap: 10px;
+}
+
+.portfolio-links a {
+    color: #fff;
+    font-size: 20px;
+    transition: color 0.3s;
+}
+
+.portfolio-links a:hover {
+    color: #ffcc00; /* Ubah warna saat hover */
+}
+
+/* Responsivitas */
+@media (max-width: 768px) {
+    .portfolio-item {
+        width: calc(50% - 30px); /* 2 kolom di layar kecil */
+    }
+}
+
+@media (max-width: 480px) {
+    .portfolio-item {
+        width: 100%; /* 1 kolom di layar sangat kecil */
+    }
+}
