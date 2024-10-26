@@ -12,12 +12,11 @@
         <p>Pilih kasur impian Anda!</p>
     </header>
     <main>
+        <h2>Counts Section</h2>
         <div id="mattress-list"></div>
-        <h2>Tambah Kasur Baru</h2>
         <form id="mattress-form">
             <input type="number" id="price" placeholder="Penjualan" required>
             <input type="text" id="name" placeholder="Years of experience" required>
-           
             <button type="submit">Tambah</button>
         </form>
 
@@ -31,16 +30,27 @@
             <input type="text" id="image" placeholder="URL Gambar" required>
             <button type="submit">Tambah Testimonial</button>
         </form>
-        
+
+        <h2>Galeri</h2>
+        <div id="portfolio-list" class="portfolio-container"></div>
+        <h3>Tambah Portfolio</h3>
+        <form id="portfolio-form">
+            <input type="text" id="portfolio-title" placeholder="Judul" required>
+            <input type="text" id="portfolio-category" placeholder="Kategori" required>
+            <input type="text" id="portfolio-image" placeholder="URL Gambar" required>
+            <button type="submit">Tambah Portfolio</button>
+        </form>
     </main>
     <script>
         const mattressList = document.getElementById('mattress-list');
         const form = document.getElementById('mattress-form');
         const testimonialList = document.getElementById('testimonial-list');
         const testimonialForm = document.getElementById('testimonial-form');
+        const portfolioList = document.getElementById('portfolio-list');
+        const portfolioForm = document.getElementById('portfolio-form');
 
         function fetchMattresses() {
-            fetch('/api/mattresses')
+            fetch('http://localhost:3000/api/mattresses')
                 .then(response => response.json())
                 .then(data => {
                     mattressList.innerHTML = data.map(m => `
@@ -54,22 +64,43 @@
         }
 
         function fetchTestimonials() {
-            fetch('/api/testimonials')
+            fetch('http://localhost:3000/api/testimonials')
                 .then(response => response.json())
                 .then(data => {
                     testimonialList.innerHTML = data.map(t => `
-    <div class="testimonial">
-        <div class="testimonial-content">
-            <img src="${t.image}" alt="${t.name}" class="testimonial-image">
-            <div class="testimonial-details">
-                <h4 class="testimonial-name">${t.name}</h4>
-                <p class="testimonial-profession">${t.profession}</p>
-                <p class="testimonial-text">"${t.text}"</p>
-            </div>
-        </div>
-    </div>
-`).join('');
+                        <div class="testimonial">
+                            <div class="testimonial-content">
+                                <img src="${t.image}" alt="${t.name}" class="testimonial-image">
+                                <div class="testimonial-details">
+                                    <h4 class="testimonial-name">${t.name}</h4>
+                                    <p class="testimonial-profession">${t.profession}</p>
+                                    <p class="testimonial-text">"${t.text}"</p>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
 
+        function fetchPortfolios() {
+            fetch('http://localhost:3000/api/portfolios')
+                .then(response => response.json())
+                .then(data => {
+                    portfolioList.innerHTML = data.map(p => `
+                        <div class="portfolio-item">
+                            <div class="portfolio-wrap">
+                                <img src="${p.image}" class="img-fluid" alt="${p.title}">
+                                <div class="portfolio-info">
+                                    <h4>${p.title}</h4>
+                                    <p>${p.category}</p>
+                                    <div class="portfolio-links">
+                                        <a href="${p.image}" data-gallery="portfolioGallery" class="portfolio-lightbox" title="${p.title}"><i class="bx bx-plus"></i></a>
+                                        <button onclick="deletePortfolio(${p.id})" title="Hapus">Hapus<i class="bx bx-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
                 });
         }
 
@@ -78,7 +109,7 @@
             const name = document.getElementById('name').value;
             const price = document.getElementById('price').value;
 
-            fetch('/api/mattresses', {
+            fetch('http://localhost:3000/api/mattresses', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, price })
@@ -94,7 +125,7 @@
             const text = document.getElementById('text').value;
             const image = document.getElementById('image').value;
 
-            fetch('/api/testimonials', {
+            fetch('http://localhost:3000/api/testimonials', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, profession, text, image })
@@ -103,14 +134,38 @@
             testimonialForm.reset();
         });
 
+        portfolioForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const title = document.getElementById('portfolio-title').value;
+            const category = document.getElementById('portfolio-category').value;
+            const image = document.getElementById('portfolio-image').value;
+
+            fetch('http://localhost:3000/api/portfolios', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, category, image })
+            }).then(fetchPortfolios);
+
+            portfolioForm.reset();
+        });
+
         function deleteMattress(id) {
-            fetch(`/api/mattresses/${id}`, {
+            fetch(`http://localhost:3000/api/mattresses/${id}`, {
                 method: 'DELETE'
             }).then(fetchMattresses);
         }
 
-        fetchMattresses();
-        fetchTestimonials();
+        function deletePortfolio(id) {
+            fetch(`http://localhost:3000/api/portfolios/${id}`, {
+                method: 'DELETE'
+            }).then(fetchPortfolios);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchMattresses();
+            fetchTestimonials();
+            fetchPortfolios();
+        });
     </script>
 </body>
 </html>

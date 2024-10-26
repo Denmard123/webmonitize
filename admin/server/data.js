@@ -1,7 +1,7 @@
 // data.js
 let mattresses = [
-    { id: 1, name: 'Kasur King Size', price: 2000000 },
-    { id: 2, name: 'Kasur Queen Size', price: 1500000 },
+    { id: 1, name: '85', price: 200 },
+    { id: 2, name: '58', price: 150 },
   ];
   
   let testimonials = [
@@ -20,7 +20,12 @@ let mattresses = [
       image: 'https://via.placeholder.com/100', // Pastikan ini URL yang benar
     },
   ];
-  
-  
-  module.exports = { mattresses, testimonials };
+  let portfolios = [
+    { id: 1, title: "Portfolio 1", category: "App", image: "https://via.placeholder.com/100" },
+    { id: 2, title: "Portfolio 2", category: "Web", image: "https://via.placeholder.com/100" },
+    { id: 2, title: "Portfolio 2", category: "Card", image: "https://via.placeholder.com/100" },
+];
+
+
+module.exports = { mattresses, testimonials, portfolios };
   

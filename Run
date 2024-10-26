@@ -1,0 +1,5 @@
+sebelum menjalankan index.html
+
+jalankan terlebih dahulu app.js pada terminal dengan node,
+contoh cd admin, node server/app.js.
+
