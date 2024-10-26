@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="adm.css">
+    <title>Kasur Store - Admin</title>
+</head>
+<body>
+    <header>
+        <h1>Kasur Store Admin</h1>
+        <p>Pilih kasur impian Anda!</p>
+    </header>
+    <main>
+        <div id="mattress-list"></div>
+        <h2>Tambah Kasur Baru</h2>
+        <form id="mattress-form">
+            <input type="number" id="price" placeholder="Penjualan" required>
+            <input type="text" id="name" placeholder="Years of experience" required>
+           
+            <button type="submit">Tambah</button>
+        </form>
+
+        <h2>Testimonial</h2>
+        <div id="testimonial-list"></div>
+        <h3>Tambah Testimonial</h3>
+        <form id="testimonial-form">
+            <input type="text" id="t-name" placeholder="Nama" required>
+            <input type="text" id="profession" placeholder="Profesi" required>
+            <textarea id="text" placeholder="Testimoni" required></textarea>
+            <input type="text" id="image" placeholder="URL Gambar" required>
+            <button type="submit">Tambah Testimonial</button>
+        </form>
+        
+    </main>
+    <script>
+        const mattressList = document.getElementById('mattress-list');
+        const form = document.getElementById('mattress-form');
+        const testimonialList = document.getElementById('testimonial-list');
+        const testimonialForm = document.getElementById('testimonial-form');
+
+        function fetchMattresses() {
+            fetch('/api/mattresses')
+                .then(response => response.json())
+                .then(data => {
+                    mattressList.innerHTML = data.map(m => `
+                        <div class="mattress">
+                            <p>${m.price}<br>Penjualan</p>
+                            <h3>${m.name} <br> Years of experience</h3>
+                            <button onclick="deleteMattress(${m.id})">Hapus</button>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        function fetchTestimonials() {
+            fetch('/api/testimonials')
+                .then(response => response.json())
+                .then(data => {
+                    testimonialList.innerHTML = data.map(t => `
+    <div class="testimonial">
+        <div class="testimonial-content">
+            <img src="${t.image}" alt="${t.name}" class="testimonial-image">
+            <div class="testimonial-details">
+                <h4 class="testimonial-name">${t.name}</h4>
+                <p class="testimonial-profession">${t.profession}</p>
+                <p class="testimonial-text">"${t.text}"</p>
+            </div>
+        </div>
+    </div>
+`).join('');
+
+                });
+        }
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+            const price = document.getElementById('price').value;
+
+            fetch('/api/mattresses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, price })
+            }).then(fetchMattresses);
+
+            form.reset();
+        });
+
+        testimonialForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const name = document.getElementById('t-name').value;
+            const profession = document.getElementById('profession').value;
+            const text = document.getElementById('text').value;
+            const image = document.getElementById('image').value;
+
+            fetch('/api/testimonials', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, profession, text, image })
+            }).then(fetchTestimonials);
+
+            testimonialForm.reset();
+        });
+
+        function deleteMattress(id) {
+            fetch(`/api/mattresses/${id}`, {
+                method: 'DELETE'
+            }).then(fetchMattresses);
+        }
+
+        fetchMattresses();
+        fetchTestimonials();
+    </script>
+</body>
+</html>

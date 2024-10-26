@@ -1,0 +1,3 @@
+jalankan app.js pada terminal dengan node,
+contoh cd admin, node server/app.js.
+
